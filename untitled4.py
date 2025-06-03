@@ -82,6 +82,5 @@ elif page == "Prediksi":
                 input_df[col] = le.transform(input_df[col])
 
       prediction = model.predict(input_df)[0]
-                 ^^^^^
         predicted_label = target_encoder.inverse_transform([prediction])[0]
         st.success(f"Tipe Kepribadian yang Diprediksi: {predicted_label}")
