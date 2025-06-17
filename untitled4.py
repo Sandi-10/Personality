@@ -186,7 +186,7 @@ elif page == "Prediksi":
             prob = st.session_state.model.predict_proba(input_df)[0]
             predicted_label = target_encoder.inverse_transform([prediction])[0]
 
-            st.success(f"✅ Tipe Kepribadian yang Diprediksi: *{predicted_label}*")
+            st.success(f"✅ Tipe Kepribadian yang Diprediksi: **{predicted_label}**")
 
             st.subheader("📋 Input Anda")
             st.dataframe(input_df)
@@ -204,15 +204,15 @@ elif page == "Anggota Kelompok":
         st.image("a14f21d8-501c-4e9f-86d7-79e649c615c8.jpg", width=180)
     with col2:
         st.markdown("""
-        ### 👩‍🏫 *Diva Auliya Pusparini*  
+        ### 👩‍🏫 **Diva Auliya Pusparini**  
         🆔 NIM: 2304030041  
 
-        ### 👩‍🎓 *Paskalia Kanicha Mardian*  
+        ### 👩‍🎓 **Paskalia Kanicha Mardian**  
         🆔 NIM: 2304030062  
 
-        ### 👨‍💻 *Sandi Krisna Mukti*  
+        ### 👨‍💻 **Sandi Krisna Mukti**  
         🆔 NIM: 2304030074  
 
-        ### 👩‍⚕ *Siti Maisyaroh*  
+        ### 👩‍⚕️ **Siti Maisyaroh**  
         🆔 NIM: 2304030079
         """)
