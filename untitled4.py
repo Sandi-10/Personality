@@ -3,35 +3,11 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from PIL import Image
-import base64
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, roc_curve, auc
-
-# Fungsi untuk mengonversi gambar ke base64
-def get_base64(file_path):
-    with open(file_path, "rb") as f:
-        data = f.read()
-    return base64.b64encode(data).decode()
-
-# Tambahkan background gambar ke seluruh halaman
-bg_image = get_base64("a14f21d8-501c-4e9f-86d7-79e649c615c8.jpg")
-st.markdown(
-    f"""
-    <style>
-    .stApp {{
-        background-image: url("data:image/jpg;base64,{bg_image}");
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-    }}
-    </style>
-    """,
-    unsafe_allow_html=True
-)
 
 # Load data
 url = 'https://raw.githubusercontent.com/Sandi-10/Personality/main/personality_dataset.csv'
@@ -199,20 +175,16 @@ elif page == "Prediksi":
 elif page == "Anggota Kelompok":
     st.title("👥 Anggota Kelompok")
 
-    col1, col2 = st.columns([1, 3])
-    with col1:
-        st.image("a14f21d8-501c-4e9f-86d7-79e649c615c8.jpg", width=180)
-    with col2:
-        st.markdown("""
-        ### 👩‍🏫 **Diva Auliya Pusparini**  
-        🆔 NIM: 2304030041  
+    st.markdown("""
+    ### 👩‍🏫 **Diva Auliya Pusparini**  
+    🆔 NIM: 2304030041  
 
-        ### 👩‍🎓 **Paskalia Kanicha Mardian**  
-        🆔 NIM: 2304030062  
+    ### 👩‍🎓 **Paskalia Kanicha Mardian**  
+    🆔 NIM: 2304030062  
 
-        ### 👨‍💻 **Sandi Krisna Mukti**  
-        🆔 NIM: 2304030074  
+    ### 👨‍💻 **Sandi Krisna Mukti**  
+    🆔 NIM: 2304030074  
 
-        ### 👩‍⚕️ **Siti Maisyaroh**  
-        🆔 NIM: 2304030079
-        """)
+    ### 👩‍⚕️ **Siti Maisyaroh**  
+    🆔 NIM: 2304030079
+    """)
