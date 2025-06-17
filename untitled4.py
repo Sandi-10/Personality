@@ -57,7 +57,7 @@ if 'model_type' not in st.session_state:
 
 # Sidebar navigasi
 st.sidebar.title("Navigasi")
-page = st.sidebar.radio("Pilih Halaman:", ["Informasi", "Pemodelan Data", "Prediksi", "Anggota Kelompok"])
+page = st.sidebar.radio("Pilih Halaman:", ["Informasi", "Pemodelan Data", "Prediksi", "Tuning Model", "Anggota Kelompok"])
 
 # -------------------- Halaman Informasi --------------------
 if page == "Informasi":
@@ -99,7 +99,6 @@ elif page == "Pemodelan Data":
     X = df_model.drop('Personality', axis=1)
     y = df_model['Personality']
 
-    # Encode fitur kategorikal
     for col in X.columns:
         if X[col].dtype == 'object':
             le = LabelEncoder()
@@ -170,13 +169,53 @@ elif page == "Pemodelan Data":
             ax3.legend()
             st.pyplot(fig_roc)
 
+# -------------------- Halaman Tuning Model --------------------
+elif page == "Tuning Model":
+    st.title("🛠️ Tuning Hyperparameter")
+    model_type = st.selectbox("Pilih Model untuk Tuning:", ["Random Forest", "K-Nearest Neighbors", "Support Vector Machine"])
+
+    df_model = df.copy()
+    X = df_model.drop('Personality', axis=1)
+    y = df_model['Personality']
+
+    for col in X.columns:
+        if X[col].dtype == 'object':
+            le = LabelEncoder()
+            X[col] = le.fit_transform(X[col])
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    if model_type == "Random Forest":
+        n_estimators = st.slider("Jumlah Trees", 10, 300, 100)
+        max_depth = st.slider("Maksimum Depth", 1, 50, 10)
+        model = RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth, random_state=42)
+
+    elif model_type == "K-Nearest Neighbors":
+        n_neighbors = st.slider("Jumlah Tetangga", 1, 20, 5)
+        weights = st.selectbox("Pembobotan", ['uniform', 'distance'])
+        model = KNeighborsClassifier(n_neighbors=n_neighbors, weights=weights)
+
+    elif model_type == "Support Vector Machine":
+        C = st.number_input("Parameter C", 0.01, 10.0, 1.0)
+        kernel = st.selectbox("Kernel", ['linear', 'rbf', 'poly', 'sigmoid'])
+        gamma = st.selectbox("Gamma", ['scale', 'auto'])
+        model = SVC(C=C, kernel=kernel, gamma=gamma, probability=True)
+
+    if st.button("Latih dan Evaluasi"):
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+        acc = accuracy_score(y_test, y_pred)
+        st.metric("Akurasi", f"{acc:.2f}")
+        report_df = pd.DataFrame(classification_report(y_test, y_pred, target_names=target_encoder.classes_, output_dict=True)).transpose()
+        st.dataframe(report_df.style.format("{:.2f}"))
+
 # -------------------- Halaman Prediksi --------------------
 elif page == "Prediksi":
     st.title("🔮 Prediksi Kepribadian")
     st.write("Masukkan nilai fitur untuk memprediksi tipe kepribadian:")
 
     if st.session_state.model is None:
-        st.warning("Model belum dilatih. Silakan buka halaman 'Pemodelan Data' dan klik tombol 'Latih Model'.")
+        st.warning("Model belum dilatih. Silakan buka halaman 'Pemodelan Data'.")
     else:
         input_data = {}
         for col in df.columns:
