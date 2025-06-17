@@ -216,17 +216,3 @@ elif page == "Anggota Kelompok":
         ### 👩‍⚕ *Siti Maisyaroh*  
         🆔 NIM: 2304030079
         """)
-
-gabungkan dengan kode  berikut :
-st.markdown(
-    f"""
-    <style>
-    .stApp {{
-        background-image: url("https://i.imgur.com/abcd123.jpg");  /* Ganti dengan URL valid */
-        background-size: cover;
-        background-attachment: fixed;
-    }}
-    </style>
-    """,
-    unsafe_allow_html=True
-)
