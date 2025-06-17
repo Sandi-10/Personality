@@ -1,6 +1,33 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, accuracy_score
+
+# Tambahkan di sini: custom CSS
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background-color: #f0f2f6;
+        background-image: linear-gradient(to bottom right, #f0f2f6, #dbe9f4);
+    }
+    h1, h2, h3, h4, h5, h6, p {
+        color: #333333;
+    }
+    .css-1d391kg {
+        background-color: #e0e0e0;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+import streamlit as st
+import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
