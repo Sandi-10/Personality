@@ -4,28 +4,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from PIL import Image
-import base64
-
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, roc_curve, auc
 
-# Fungsi untuk mengonversi gambar ke base64
-def get_base64(file_path):
-    with open(file_path, "rb") as f:
-        data = f.read()
-    return base64.b64encode(data).decode()
-
-# Tambahkan background gambar ke seluruh halaman
-bg_image = get_base64("a14f21d8-501c-4e9f-86d7-79e649c615c8.jpg")
+# Tambahkan background dari Google Drive (file dibagikan ke publik)
 st.markdown(
     f"""
     <style>
     .stApp {{
-        background-image: url("data:image/jpg;base64,{bg_image}");
+        background-image: url("https://drive.google.com/uc?export=view&id=16VzE-xAgPG4p0Nelv8SkG6-toglhh4K1");
         background-size: cover;
         background-position: center;
+        background-attachment: fixed;
         background-repeat: no-repeat;
     }}
     </style>
@@ -57,28 +49,28 @@ page = st.sidebar.radio("Pilih Halaman:", ["Informasi", "Pemodelan Data", "Predi
 
 # -------------------- Halaman Informasi --------------------
 if page == "Informasi":
-    st.title("📘 Informasi Dataset")
+    st.title("\U0001F4D8 Informasi Dataset")
     st.write("Dataset ini berisi data kepribadian berdasarkan berbagai aspek.")
 
-    st.subheader("🔍 Contoh Data")
+    st.subheader("\U0001F50D Contoh Data")
     st.dataframe(df.head())
 
-    st.subheader("📊 Deskripsi Kolom")
+    st.subheader("\U0001F4CA Deskripsi Kolom")
     st.write(df.describe(include='all'))
 
-    st.subheader("🧠 Distribusi Target (Personality Type)")
+    st.subheader("\U0001F9E0 Distribusi Target (Personality Type)")
     fig_dist, ax_dist = plt.subplots()
     sns.countplot(data=df, x='Personality', ax=ax_dist)
     ax_dist.set_xticklabels(target_encoder.inverse_transform(sorted(df['Personality'].unique())))
     st.pyplot(fig_dist)
 
-    st.subheader("📉 Korelasi antar Fitur")
+    st.subheader("\U0001F4C9 Korelasi antar Fitur")
     fig_corr, ax_corr = plt.subplots()
     corr = df.corr(numeric_only=True)
     sns.heatmap(corr, annot=True, cmap='coolwarm', ax=ax_corr)
     st.pyplot(fig_corr)
 
-    st.subheader("📦 Boxplot Setiap Fitur Numerik")
+    st.subheader("\U0001F4E6 Boxplot Setiap Fitur Numerik")
     for col in df.select_dtypes(include=['int64', 'float64']).columns:
         if col != 'Personality':
             fig, ax = plt.subplots()
@@ -89,13 +81,12 @@ if page == "Informasi":
 
 # -------------------- Halaman Pemodelan --------------------
 elif page == "Pemodelan Data":
-    st.title("📊 Pemodelan Data")
+    st.title("\U0001F4CA Pemodelan Data")
 
     df_model = df.copy()
     X = df_model.drop('Personality', axis=1)
     y = df_model['Personality']
 
-    # Encode fitur kategorikal
     for col in X.columns:
         if X[col].dtype == 'object':
             le = LabelEncoder()
@@ -103,7 +94,7 @@ elif page == "Pemodelan Data":
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    if st.button("🚀 Latih Model"):
+    if st.button("\U0001F680 Latih Model"):
         model = RandomForestClassifier(random_state=42)
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
@@ -116,14 +107,14 @@ elif page == "Pemodelan Data":
         st.session_state.X_test = X_test
         st.session_state.y_test = y_test
 
-        st.subheader("🎯 Akurasi Model")
+        st.subheader("\U0001F3AF Akurasi Model")
         st.metric(label="Akurasi", value=f"{acc:.2f}")
 
-        st.subheader("📋 Classification Report")
+        st.subheader("\U0001F4CB Classification Report")
         report_df = pd.DataFrame(report).transpose()
         st.dataframe(report_df.style.format("{:.2f}"))
 
-        st.subheader("🧩 Confusion Matrix")
+        st.subheader("\U0001F9E9 Confusion Matrix")
         cm = confusion_matrix(y_test, y_pred)
         fig_cm, ax = plt.subplots()
         sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
@@ -133,7 +124,7 @@ elif page == "Pemodelan Data":
         ax.set_ylabel('Actual')
         st.pyplot(fig_cm)
 
-        st.subheader("📌 Pentingnya Fitur")
+        st.subheader("\U0001F4CC Pentingnya Fitur")
         importances = model.feature_importances_
         imp_df = pd.DataFrame({'Fitur': X.columns, 'Pentingnya': importances}).sort_values(by='Pentingnya', ascending=False)
         fig_imp, ax2 = plt.subplots()
@@ -142,7 +133,7 @@ elif page == "Pemodelan Data":
         st.pyplot(fig_imp)
 
         if len(target_encoder.classes_) == 2:
-            st.subheader("🚦 ROC Curve")
+            st.subheader("\U0001F6A6 ROC Curve")
             y_prob = model.predict_proba(X_test)[:, 1]
             fpr, tpr, _ = roc_curve(y_test, y_prob)
             roc_auc = auc(fpr, tpr)
@@ -157,7 +148,7 @@ elif page == "Pemodelan Data":
 
 # -------------------- Halaman Prediksi --------------------
 elif page == "Prediksi":
-    st.title("🔮 Prediksi Kepribadian")
+    st.title("\U0001F52E Prediksi Kepribadian")
     st.write("Masukkan nilai fitur untuk memprediksi tipe kepribadian:")
 
     if st.session_state.model is None:
@@ -186,22 +177,22 @@ elif page == "Prediksi":
             prob = st.session_state.model.predict_proba(input_df)[0]
             predicted_label = target_encoder.inverse_transform([prediction])[0]
 
-            st.success(f"✅ Tipe Kepribadian yang Diprediksi: *{predicted_label}*")
+            st.success(f"\u2705 Tipe Kepribadian yang Diprediksi: *{predicted_label}*")
 
-            st.subheader("📋 Input Anda")
+            st.subheader("\U0001F4CB Input Anda")
             st.dataframe(input_df)
 
-            st.subheader("📈 Probabilitas Prediksi")
+            st.subheader("\U0001F4C8 Probabilitas Prediksi")
             prob_df = pd.Series(prob, index=target_encoder.classes_)
             st.bar_chart(prob_df)
 
 # -------------------- Halaman Anggota Kelompok --------------------
 elif page == "Anggota Kelompok":
-    st.title("👥 Anggota Kelompok")
+    st.title("\U0001F465 Anggota Kelompok")
 
     col1, col2 = st.columns([1, 3])
     with col1:
-        st.image("a14f21d8-501c-4e9f-86d7-79e649c615c8.jpg", width=180)
+        st.image("https://drive.google.com/uc?export=view&id=16VzE-xAgPG4p0Nelv8SkG6-toglhh4K1", width=180)
     with col2:
         st.markdown("""
         ### 👩‍🏫 *Diva Auliya Pusparini*  
@@ -213,6 +204,6 @@ elif page == "Anggota Kelompok":
         ### 👨‍💻 *Sandi Krisna Mukti*  
         🆔 NIM: 2304030074  
 
-        ### 👩‍⚕ *Siti Maisyaroh*  
+        ### 👩‍⚕️ *Siti Maisyaroh*  
         🆔 NIM: 2304030079
         """)
