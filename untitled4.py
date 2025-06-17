@@ -1,63 +1,62 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score
-import seaborn as sns
-import matplotlib.pyplot as plt
 
-# ================== CUSTOM CSS ==================
+# --- Tambahkan CSS untuk mengganti latar belakang halaman ---
 st.markdown(
     """
     <style>
     .stApp {
-        background-color: #f0f2f6;
-        background-image: linear-gradient(to bottom right, #f0f2f6, #dbe9f4);
+        background-color: #f4f6f8;
     }
-    h1, h2, h3, h4, h5, h6, p {
+    .title {
         color: #333333;
-    }
-    .css-1d391kg {
-        background-color: #e0e0e0;
     }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# ================== LOAD DATA ==================
+# --- Load Data ---
 url = 'https://raw.githubusercontent.com/Sandi-10/Personality/main/personality_dataset.csv'
 df = pd.read_csv(url)
 
-# LabelEncoder untuk target
+# Encode target
 target_encoder = LabelEncoder()
 df['Personality'] = target_encoder.fit_transform(df['Personality'])
 
-# ================== SIDEBAR ==================
+# --- Sidebar Navigasi ---
 st.sidebar.title("Navigasi")
 page = st.sidebar.radio("Pilih Halaman:", ["Informasi", "Pemodelan Data", "Prediksi", "Anggota Kelompok"])
 
-# ================== INFORMASI ==================
+# --- Halaman Informasi ---
 if page == "Informasi":
     st.title("Informasi Dataset")
     st.write("Dataset ini berisi data kepribadian berdasarkan berbagai aspek.")
+
     st.subheader("Contoh Data")
     st.dataframe(df.head())
 
-    st.subheader("Deskripsi Kolom")
+    st.subheader("Deskripsi Statistik")
     st.write(df.describe(include='all'))
 
-    st.subheader("Distribusi Target (Personality Type)")
+    st.subheader("Distribusi Kelas Kepribadian")
     st.bar_chart(df['Personality'].value_counts())
 
-    st.subheader("Heatmap Korelasi Fitur")
-    fig, ax = plt.subplots()
-    sns.heatmap(df.corr(numeric_only=True), annot=True, cmap="coolwarm", ax=ax)
+    st.subheader("Korelasi antar Fitur (jika numerik)")
+    corr = df.select_dtypes(include=np.number).corr()
+    fig, ax = plt.subplots(figsize=(8, 6))
+    sns.heatmap(corr, annot=True, cmap='coolwarm', ax=ax)
     st.pyplot(fig)
 
-# ================== PEMODELAN ==================
+# --- Halaman Pemodelan Data ---
 elif page == "Pemodelan Data":
     st.title("Pemodelan Data")
 
@@ -81,18 +80,10 @@ elif page == "Pemodelan Data":
         st.write(f"Akurasi: {acc:.2f}")
 
         st.subheader("Classification Report")
-        st.text(classification_report(y_test, y_pred, target_names=target_encoder.classes_))
+        report = classification_report(y_test, y_pred, target_names=target_encoder.classes_, output_dict=False)
+        st.text(report)
 
-        # Visualisasi pentingnya fitur
-        st.subheader("Visualisasi Pentingnya Fitur")
-        feature_importance = pd.Series(model.feature_importances_, index=X.columns).sort_values(ascending=False)
-        fig2, ax2 = plt.subplots()
-        sns.barplot(x=feature_importance, y=feature_importance.index, ax=ax2)
-        ax2.set_xlabel("Importance")
-        ax2.set_ylabel("Features")
-        st.pyplot(fig2)
-
-# ================== PREDIKSI ==================
+# --- Halaman Prediksi ---
 elif page == "Prediksi":
     st.title("Prediksi Kepribadian")
     st.write("Masukkan nilai fitur untuk memprediksi tipe kepribadian:")
@@ -115,11 +106,27 @@ elif page == "Prediksi":
                 le.fit(df[col])
                 input_df[col] = le.transform(input_df[col])
 
-        model = RandomForestClassifier()
         X_all = df.drop('Personality', axis=1)
         y_all = df['Personality']
 
         for col in X_all.columns:
             if X_all[col].dtype == 'object':
                 le = LabelEncoder()
-                X_all[col] = le.fit_transform(X_all[co]()_
+                X_all[col] = le.fit_transform(X_all[col])
+
+        model = RandomForestClassifier()
+        model.fit(X_all, y_all)
+
+        prediction = model.predict(input_df)[0]
+        predicted_label = target_encoder.inverse_transform([prediction])[0]
+        st.success(f"Tipe Kepribadian yang Diprediksi: {predicted_label}")
+
+# --- Halaman Anggota Kelompok ---
+elif page == "Anggota Kelompok":
+    st.title("Anggota Kelompok")
+    st.markdown("""
+    **1. Diva Auliya Pusparini** (2304030041)  
+    **2. Paskalia Kanicha Mardian** (2304030062)  
+    **3. Sandi Krisna Mukti** (2304030074)  
+    **4. Siti Maisyaroh** (2304030079)
+    """)
