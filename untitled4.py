@@ -13,26 +13,9 @@ from sklearn.metrics import classification_report, accuracy_score, confusion_mat
 url = 'https://raw.githubusercontent.com/Sandi-10/Personality/main/personality_dataset.csv'
 df = pd.read_csv(url)
 
-# Ganti nama kolom ke format Bahasa Indonesia
-nama_kolom_baru = {
-    'Time_spent_Alone': 'Waktu Sendiri',
-    'Fear_of_public_speaking': 'Takut Panggung',
-    'Social_media_usage': 'Penggunaan Media Sosial',
-    'Socializing': 'Bersosialisasi',
-    'Reading_books': 'Membaca Buku',
-    'Hobbies': 'Hobi',
-    'Writing': 'Menulis',
-    'Helping_others': 'Membantu Orang Lain',
-    'Travelling': 'Bepergian',
-    'Thinking': 'Berpikir',
-    'Favorite_color': 'Warna Favorit',
-    'Personality': 'Kepribadian'
-}
-df.rename(columns=nama_kolom_baru, inplace=True)
-
 # Encode target
 target_encoder = LabelEncoder()
-df['Kepribadian'] = target_encoder.fit_transform(df['Kepribadian'])
+df['Personality'] = target_encoder.fit_transform(df['Personality'])
 
 # Inisialisasi session state
 if 'model' not in st.session_state:
@@ -59,10 +42,10 @@ if page == "Informasi":
     st.subheader("📊 Deskripsi Kolom")
     st.write(df.describe(include='all'))
 
-    st.subheader("🧠 Distribusi Target (Tipe Kepribadian)")
+    st.subheader("🧠 Distribusi Target (Personality Type)")
     fig_dist, ax_dist = plt.subplots()
-    sns.countplot(data=df, x='Kepribadian', ax=ax_dist)
-    ax_dist.set_xticklabels(target_encoder.inverse_transform(sorted(df['Kepribadian'].unique())))
+    sns.countplot(data=df, x='Personality', ax=ax_dist)
+    ax_dist.set_xticklabels(target_encoder.inverse_transform(sorted(df['Personality'].unique())))
     st.pyplot(fig_dist)
 
     st.subheader("📉 Korelasi antar Fitur")
@@ -73,11 +56,11 @@ if page == "Informasi":
 
     st.subheader("📦 Boxplot Setiap Fitur Numerik")
     for col in df.select_dtypes(include=['int64', 'float64']).columns:
-        if col != 'Kepribadian':
+        if col != 'Personality':
             fig, ax = plt.subplots()
-            sns.boxplot(data=df, x='Kepribadian', y=col, ax=ax)
-            ax.set_title(f"Distribusi {col} berdasarkan Kepribadian")
-            ax.set_xticklabels(target_encoder.inverse_transform(sorted(df['Kepribadian'].unique())))
+            sns.boxplot(data=df, x='Personality', y=col, ax=ax)
+            ax.set_title(f"Distribusi {col} berdasarkan Personality")
+            ax.set_xticklabels(target_encoder.inverse_transform(sorted(df['Personality'].unique())))
             st.pyplot(fig)
 
 # -------------------- Halaman Pemodelan --------------------
@@ -85,8 +68,8 @@ elif page == "Pemodelan Data":
     st.title("📊 Pemodelan Data")
 
     df_model = df.copy()
-    X = df_model.drop('Kepribadian', axis=1)
-    y = df_model['Kepribadian']
+    X = df_model.drop('Personality', axis=1)
+    y = df_model['Personality']
 
     # Encode fitur kategorikal
     for col in X.columns:
@@ -122,8 +105,8 @@ elif page == "Pemodelan Data":
         sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
                     xticklabels=target_encoder.classes_,
                     yticklabels=target_encoder.classes_, ax=ax)
-        ax.set_xlabel('Prediksi')
-        ax.set_ylabel('Aktual')
+        ax.set_xlabel('Predicted')
+        ax.set_ylabel('Actual')
         st.pyplot(fig_cm)
 
         st.subheader("📌 Pentingnya Fitur")
@@ -157,12 +140,13 @@ elif page == "Prediksi":
         st.warning("Model belum dilatih. Silakan buka halaman 'Pemodelan Data' dan klik tombol 'Latih Model'.")
     else:
         input_data = {}
-        for col in st.session_state.X_columns:
-            if df[col].dtype in [np.float64, np.int64]:
-                val = st.number_input(f"{col}", float(df[col].min()), float(df[col].max()), float(df[col].mean()))
-            else:
-                val = st.selectbox(f"{col}", sorted(df[col].dropna().unique()))
-            input_data[col] = val
+        for col in df.columns:
+            if col != 'Personality':
+                if df[col].dtype in [np.float64, np.int64]:
+                    val = st.number_input(f"{col}", float(df[col].min()), float(df[col].max()), float(df[col].mean()))
+                else:
+                    val = st.selectbox(f"{col}", sorted(df[col].dropna().unique()))
+                input_data[col] = val
 
         input_df = pd.DataFrame([input_data])
 
