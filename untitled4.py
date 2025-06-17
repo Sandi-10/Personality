@@ -9,17 +9,30 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, roc_curve, auc
 
-# Fungsi untuk mengubah nama kolom menjadi format label yang mudah dibaca
-def format_label(label):
-    return label.replace('_', ' ').title().replace('Dan', 'dan')
-
 # Load data
 url = 'https://raw.githubusercontent.com/Sandi-10/Personality/main/personality_dataset.csv'
 df = pd.read_csv(url)
 
+# Ganti nama kolom ke format Bahasa Indonesia
+nama_kolom_baru = {
+    'Time_spent_Alone': 'Waktu Sendiri',
+    'Fear_of_public_speaking': 'Takut Panggung',
+    'Social_media_usage': 'Penggunaan Media Sosial',
+    'Socializing': 'Bersosialisasi',
+    'Reading_books': 'Membaca Buku',
+    'Hobbies': 'Hobi',
+    'Writing': 'Menulis',
+    'Helping_others': 'Membantu Orang Lain',
+    'Travelling': 'Bepergian',
+    'Thinking': 'Berpikir',
+    'Favorite_color': 'Warna Favorit',
+    'Personality': 'Kepribadian'
+}
+df.rename(columns=nama_kolom_baru, inplace=True)
+
 # Encode target
 target_encoder = LabelEncoder()
-df['Tipe_Kepribadian'] = target_encoder.fit_transform(df['Tipe_Kepribadian'])
+df['Kepribadian'] = target_encoder.fit_transform(df['Kepribadian'])
 
 # Inisialisasi session state
 if 'model' not in st.session_state:
@@ -33,10 +46,10 @@ if 'y_test' not in st.session_state:
 
 # Sidebar navigasi
 st.sidebar.title("Navigasi")
-halaman = st.sidebar.radio("Pilih Halaman:", ["Informasi", "Pemodelan Data", "Prediksi", "Anggota Kelompok"])
+page = st.sidebar.radio("Pilih Halaman:", ["Informasi", "Pemodelan Data", "Prediksi", "Anggota Kelompok"])
 
 # -------------------- Halaman Informasi --------------------
-if halaman == "Informasi":
+if page == "Informasi":
     st.title("📘 Informasi Dataset")
     st.write("Dataset ini berisi data kepribadian berdasarkan berbagai aspek.")
 
@@ -48,8 +61,8 @@ if halaman == "Informasi":
 
     st.subheader("🧠 Distribusi Target (Tipe Kepribadian)")
     fig_dist, ax_dist = plt.subplots()
-    sns.countplot(data=df, x='Tipe_Kepribadian', ax=ax_dist)
-    ax_dist.set_xticklabels(target_encoder.inverse_transform(sorted(df['Tipe_Kepribadian'].unique())))
+    sns.countplot(data=df, x='Kepribadian', ax=ax_dist)
+    ax_dist.set_xticklabels(target_encoder.inverse_transform(sorted(df['Kepribadian'].unique())))
     st.pyplot(fig_dist)
 
     st.subheader("📉 Korelasi antar Fitur")
@@ -59,27 +72,27 @@ if halaman == "Informasi":
     st.pyplot(fig_corr)
 
     st.subheader("📦 Boxplot Setiap Fitur Numerik")
-    for kolom in df.select_dtypes(include=['int64', 'float64']).columns:
-        if kolom != 'Tipe_Kepribadian':
+    for col in df.select_dtypes(include=['int64', 'float64']).columns:
+        if col != 'Kepribadian':
             fig, ax = plt.subplots()
-            sns.boxplot(data=df, x='Tipe_Kepribadian', y=kolom, ax=ax)
-            ax.set_title(f"Distribusi {format_label(kolom)} berdasarkan Tipe Kepribadian")
-            ax.set_xticklabels(target_encoder.inverse_transform(sorted(df['Tipe_Kepribadian'].unique())))
+            sns.boxplot(data=df, x='Kepribadian', y=col, ax=ax)
+            ax.set_title(f"Distribusi {col} berdasarkan Kepribadian")
+            ax.set_xticklabels(target_encoder.inverse_transform(sorted(df['Kepribadian'].unique())))
             st.pyplot(fig)
 
 # -------------------- Halaman Pemodelan --------------------
-elif halaman == "Pemodelan Data":
+elif page == "Pemodelan Data":
     st.title("📊 Pemodelan Data")
 
     df_model = df.copy()
-    X = df_model.drop('Tipe_Kepribadian', axis=1)
-    y = df_model['Tipe_Kepribadian']
+    X = df_model.drop('Kepribadian', axis=1)
+    y = df_model['Kepribadian']
 
     # Encode fitur kategorikal
-    for kolom in X.columns:
-        if X[kolom].dtype == 'object':
+    for col in X.columns:
+        if X[col].dtype == 'object':
             le = LabelEncoder()
-            X[kolom] = le.fit_transform(X[kolom])
+            X[col] = le.fit_transform(X[col])
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
@@ -88,8 +101,8 @@ elif halaman == "Pemodelan Data":
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
 
-        akurasi = accuracy_score(y_test, y_pred)
-        laporan = classification_report(y_test, y_pred, target_names=target_encoder.classes_, output_dict=True)
+        acc = accuracy_score(y_test, y_pred)
+        report = classification_report(y_test, y_pred, target_names=target_encoder.classes_, output_dict=True)
 
         st.session_state.model = model
         st.session_state.X_columns = X.columns.tolist()
@@ -97,11 +110,11 @@ elif halaman == "Pemodelan Data":
         st.session_state.y_test = y_test
 
         st.subheader("🎯 Akurasi Model")
-        st.metric(label="Akurasi", value=f"{akurasi:.2f}")
+        st.metric(label="Akurasi", value=f"{acc:.2f}")
 
-        st.subheader("📋 Laporan Klasifikasi")
-        laporan_df = pd.DataFrame(laporan).transpose()
-        st.dataframe(laporan_df.style.format("{:.2f}"))
+        st.subheader("📋 Classification Report")
+        report_df = pd.DataFrame(report).transpose()
+        st.dataframe(report_df.style.format("{:.2f}"))
 
         st.subheader("🧩 Confusion Matrix")
         cm = confusion_matrix(y_test, y_pred)
@@ -114,10 +127,10 @@ elif halaman == "Pemodelan Data":
         st.pyplot(fig_cm)
 
         st.subheader("📌 Pentingnya Fitur")
-        penting = model.feature_importances_
-        df_penting = pd.DataFrame({'Fitur': X.columns, 'Pentingnya': penting}).sort_values(by='Pentingnya', ascending=False)
+        importances = model.feature_importances_
+        imp_df = pd.DataFrame({'Fitur': X.columns, 'Pentingnya': importances}).sort_values(by='Pentingnya', ascending=False)
         fig_imp, ax2 = plt.subplots()
-        sns.barplot(x='Pentingnya', y='Fitur', data=df_penting, palette='viridis', ax=ax2)
+        sns.barplot(x='Pentingnya', y='Fitur', data=imp_df, palette='viridis', ax=ax2)
         ax2.set_title("Pentingnya Fitur")
         st.pyplot(fig_imp)
 
@@ -136,48 +149,46 @@ elif halaman == "Pemodelan Data":
             st.pyplot(fig_roc)
 
 # -------------------- Halaman Prediksi --------------------
-elif halaman == "Prediksi":
-    st.title("🔮 Prediksi Tipe Kepribadian")
+elif page == "Prediksi":
+    st.title("🔮 Prediksi Kepribadian")
     st.write("Masukkan nilai fitur untuk memprediksi tipe kepribadian:")
 
     if st.session_state.model is None:
         st.warning("Model belum dilatih. Silakan buka halaman 'Pemodelan Data' dan klik tombol 'Latih Model'.")
     else:
         input_data = {}
-        for kolom in df.columns:
-            if kolom != 'Tipe_Kepribadian':
-                label_tampil = format_label(kolom)
-                if df[kolom].dtype in [np.float64, np.int64]:
-                    val = st.number_input(label_tampil, float(df[kolom].min()), float(df[kolom].max()), float(df[kolom].mean()))
-                else:
-                    val = st.selectbox(label_tampil, sorted(df[kolom].dropna().unique()))
-                input_data[kolom] = val
+        for col in st.session_state.X_columns:
+            if df[col].dtype in [np.float64, np.int64]:
+                val = st.number_input(f"{col}", float(df[col].min()), float(df[col].max()), float(df[col].mean()))
+            else:
+                val = st.selectbox(f"{col}", sorted(df[col].dropna().unique()))
+            input_data[col] = val
 
         input_df = pd.DataFrame([input_data])
 
         if st.button("Prediksi"):
-            for kolom in input_df.columns:
-                if input_df[kolom].dtype == 'object':
+            for col in input_df.columns:
+                if input_df[col].dtype == 'object':
                     le = LabelEncoder()
-                    le.fit(df[kolom])
-                    input_df[kolom] = le.transform(input_df[kolom])
+                    le.fit(df[col])
+                    input_df[col] = le.transform(input_df[col])
 
             input_df = input_df[st.session_state.X_columns]
-            prediksi = st.session_state.model.predict(input_df)[0]
-            probabilitas = st.session_state.model.predict_proba(input_df)[0]
-            label_prediksi = target_encoder.inverse_transform([prediksi])[0]
+            prediction = st.session_state.model.predict(input_df)[0]
+            prob = st.session_state.model.predict_proba(input_df)[0]
+            predicted_label = target_encoder.inverse_transform([prediction])[0]
 
-            st.success(f"✅ Tipe Kepribadian yang Diprediksi: **{label_prediksi}**")
+            st.success(f"✅ Tipe Kepribadian yang Diprediksi: **{predicted_label}**")
 
             st.subheader("📋 Input Anda")
             st.dataframe(input_df)
 
             st.subheader("📈 Probabilitas Prediksi")
-            prob_df = pd.Series(probabilitas, index=target_encoder.classes_)
+            prob_df = pd.Series(prob, index=target_encoder.classes_)
             st.bar_chart(prob_df)
 
 # -------------------- Halaman Anggota Kelompok --------------------
-elif halaman == "Anggota Kelompok":
+elif page == "Anggota Kelompok":
     st.title("👥 Anggota Kelompok")
 
     st.markdown("""
