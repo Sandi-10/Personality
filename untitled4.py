@@ -12,6 +12,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix, roc_curve, auc
+from sklearn.model_selection import GridSearchCV
 
 # Fungsi untuk mengonversi gambar ke base64
 def get_base64(file_path):
@@ -99,6 +100,7 @@ elif page == "Pemodelan Data":
     X = df_model.drop('Personality', axis=1)
     y = df_model['Personality']
 
+    # Encode fitur kategorikal
     for col in X.columns:
         if X[col].dtype == 'object':
             le = LabelEncoder()
@@ -197,7 +199,6 @@ elif page == "Prediksi":
 
             input_df = input_df[st.session_state.X_columns]
             prediction = st.session_state.model.predict(input_df)[0]
-            prob = st.session_state.model.predict_proba(input_df)[0]
             predicted_label = target_encoder.inverse_transform([prediction])[0]
 
             st.success(f"✅ Tipe Kepribadian yang Diprediksi: *{predicted_label}*")
@@ -205,9 +206,11 @@ elif page == "Prediksi":
             st.subheader("📋 Input Anda")
             st.dataframe(input_df)
 
-            st.subheader("📈 Probabilitas Prediksi")
-            prob_df = pd.Series(prob, index=target_encoder.classes_)
-            st.bar_chart(prob_df)
+            if hasattr(st.session_state.model, "predict_proba"):
+                prob = st.session_state.model.predict_proba(input_df)[0]
+                st.subheader("📈 Probabilitas Prediksi")
+                prob_df = pd.Series(prob, index=target_encoder.classes_)
+                st.bar_chart(prob_df)
 
             csv = input_df.copy()
             csv['Prediksi'] = predicted_label
@@ -216,7 +219,7 @@ elif page == "Prediksi":
 
 # -------------------- Halaman Tuning Model --------------------
 elif page == "Tuning Model":
-    st.title("🛠️ Tuning Hyperparameter Model")
+    st.title("🔧 Tuning Hyperparameter")
 
     df_model = df.copy()
     X = df_model.drop('Personality', axis=1)
@@ -229,41 +232,37 @@ elif page == "Tuning Model":
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    st.subheader("Pilih Model untuk Tuning")
-    model_choice = st.selectbox("Model", ["Random Forest", "K-Nearest Neighbors", "Support Vector Machine"])
+    model_type = st.selectbox("Pilih Model untuk Tuning:", ["Random Forest", "K-Nearest Neighbors", "Support Vector Machine"])
 
-    if model_choice == "Random Forest":
-        n_estimators = st.slider("Jumlah Trees (n_estimators)", 10, 300, 100, step=10)
-        max_depth = st.slider("Kedalaman Maksimal (max_depth)", 1, 50, 10, step=1)
-        model = RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth, random_state=42)
+    if model_type == "Random Forest":
+        param_grid = {
+            'n_estimators': [50, 100, 150],
+            'max_depth': [None, 5, 10],
+            'min_samples_split': [2, 5]
+        }
+        base_model = RandomForestClassifier(random_state=42)
+    elif model_type == "K-Nearest Neighbors":
+        param_grid = {
+            'n_neighbors': [3, 5, 7],
+            'weights': ['uniform', 'distance']
+        }
+        base_model = KNeighborsClassifier()
+    else:
+        param_grid = {
+            'C': [0.1, 1, 10],
+            'kernel': ['linear', 'rbf']
+        }
+        base_model = SVC(probability=True)
 
-    elif model_choice == "K-Nearest Neighbors":
-        n_neighbors = st.slider("Jumlah Tetangga (n_neighbors)", 1, 20, 5)
-        metric = st.selectbox("Metode Jarak", ["minkowski", "euclidean", "manhattan"])
-        model = KNeighborsClassifier(n_neighbors=n_neighbors, metric=metric)
+    if st.button("🔍 Lakukan Grid Search"):
+        grid = GridSearchCV(base_model, param_grid, cv=5)
+        grid.fit(X_train, y_train)
+        st.success("Tuning selesai!")
+        st.write("Best Parameters:", grid.best_params_)
 
-    elif model_choice == "Support Vector Machine":
-        C = st.number_input("Nilai Regularisasi (C)", 0.01, 10.0, 1.0)
-        kernel = st.selectbox("Kernel", ["linear", "rbf", "poly", "sigmoid"])
-        gamma = st.selectbox("Gamma", ["scale", "auto"])
-        model = SVC(C=C, kernel=kernel, gamma=gamma, probability=True)
-
-    if st.button("🔍 Jalankan Tuning dan Evaluasi"):
-        model.fit(X_train, y_train)
-        y_pred = model.predict(X_test)
+        y_pred = grid.predict(X_test)
         acc = accuracy_score(y_test, y_pred)
-
-        st.success(f"Akurasi: {acc:.2f}")
-
-        st.subheader("📋 Classification Report")
-        report_df = pd.DataFrame(classification_report(y_test, y_pred, target_names=target_encoder.classes_, output_dict=True)).transpose()
-        st.dataframe(report_df.style.format("{:.2f}"))
-
-        st.subheader("🧩 Confusion Matrix")
-        fig_cm, ax = plt.subplots()
-        cm = confusion_matrix(y_test, y_pred)
-        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=target_encoder.classes_, yticklabels=target_encoder.classes_, ax=ax)
-        st.pyplot(fig_cm)
+        st.metric("Akurasi Setelah Tuning", f"{acc:.2f}")
 
 # -------------------- Halaman Anggota Kelompok --------------------
 elif page == "Anggota Kelompok":
