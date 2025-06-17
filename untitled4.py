@@ -27,36 +27,48 @@ if 'X_test' not in st.session_state:
 if 'y_test' not in st.session_state:
     st.session_state.y_test = None
 
+# Tambahkan CSS untuk mengganti latar belakang
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background-color: #f4f6f8;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # Sidebar navigasi
 st.sidebar.title("Navigasi")
-page = st.sidebar.radio("Pilih Halaman:", ["Informasi", "Pemodelan Data", "Prediksi"])
+page = st.sidebar.radio("Pilih Halaman:", ["Informasi", "Pemodelan Data", "Prediksi", "Anggota Kelompok"])
 
 # -------------------------------
 # Halaman Informasi
 # -------------------------------
 if page == "Informasi":
-    st.title("📘 Informasi Dataset")
+    st.title("\U0001F4D8 Informasi Dataset")
     st.write("Dataset ini berisi data kepribadian berdasarkan berbagai aspek.")
 
-    st.subheader("🔍 Contoh Data")
+    st.subheader("\U0001F50D Contoh Data")
     st.dataframe(df.head())
 
-    st.subheader("📊 Deskripsi Kolom")
+    st.subheader("\U0001F4CA Deskripsi Kolom")
     st.write(df.describe(include='all'))
 
-    st.subheader("🧠 Distribusi Target (Personality Type)")
+    st.subheader("\U0001F9E0 Distribusi Target (Personality Type)")
     fig_dist, ax_dist = plt.subplots()
     sns.countplot(data=df, x='Personality', ax=ax_dist)
     ax_dist.set_xticklabels(target_encoder.inverse_transform(sorted(df['Personality'].unique())))
     st.pyplot(fig_dist)
 
-    st.subheader("📉 Korelasi antar Fitur")
+    st.subheader("\U0001F4C9 Korelasi antar Fitur")
     fig_corr, ax_corr = plt.subplots()
     corr = df.corr(numeric_only=True)
     sns.heatmap(corr, annot=True, cmap='coolwarm', ax=ax_corr)
     st.pyplot(fig_corr)
 
-    st.subheader("📦 Boxplot Setiap Fitur Numerik")
+    st.subheader("\U0001F4E6 Boxplot Setiap Fitur Numerik")
     for col in df.select_dtypes(include=['int64', 'float64']).columns:
         if col != 'Personality':
             fig, ax = plt.subplots()
@@ -69,7 +81,7 @@ if page == "Informasi":
 # Halaman Pemodelan Data
 # -------------------------------
 elif page == "Pemodelan Data":
-    st.title("📊 Pemodelan Data")
+    st.title("\U0001F4CA Pemodelan Data")
 
     df_model = df.copy()
     X = df_model.drop('Personality', axis=1)
@@ -83,7 +95,7 @@ elif page == "Pemodelan Data":
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    if st.button("🚀 Latih Model"):
+    if st.button("\U0001F680 Latih Model"):
         model = RandomForestClassifier(random_state=42)
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
@@ -97,14 +109,14 @@ elif page == "Pemodelan Data":
         st.session_state.X_test = X_test
         st.session_state.y_test = y_test
 
-        st.subheader("🎯 Akurasi Model")
+        st.subheader("\U0001F3AF Akurasi Model")
         st.metric(label="Akurasi", value=f"{acc:.2f}")
 
-        st.subheader("📋 Classification Report")
+        st.subheader("\U0001F4CB Classification Report")
         report_df = pd.DataFrame(report).transpose()
         st.dataframe(report_df.style.format("{:.2f}"))
 
-        st.subheader("🧱 Confusion Matrix")
+        st.subheader("\U0001F9F1 Confusion Matrix")
         cm = confusion_matrix(y_test, y_pred)
         fig_cm, ax = plt.subplots()
         sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
@@ -114,7 +126,7 @@ elif page == "Pemodelan Data":
         ax.set_ylabel('Actual')
         st.pyplot(fig_cm)
 
-        st.subheader("📌 Pentingnya Fitur (Feature Importance)")
+        st.subheader("\U0001F4CC Pentingnya Fitur (Feature Importance)")
         importances = model.feature_importances_
         imp_df = pd.DataFrame({'Fitur': X.columns, 'Pentingnya': importances}).sort_values(by='Pentingnya', ascending=False)
 
@@ -125,7 +137,7 @@ elif page == "Pemodelan Data":
 
         # ROC Curve untuk klasifikasi biner
         if len(target_encoder.classes_) == 2:
-            st.subheader("🚦 ROC Curve")
+            st.subheader("\U0001F6A6 ROC Curve")
             y_prob = model.predict_proba(X_test)[:, 1]
             fpr, tpr, _ = roc_curve(y_test, y_prob)
             roc_auc = auc(fpr, tpr)
@@ -142,7 +154,7 @@ elif page == "Pemodelan Data":
 # Halaman Prediksi
 # -------------------------------
 elif page == "Prediksi":
-    st.title("🔮 Prediksi Kepribadian")
+    st.title("\U0001F52E Prediksi Kepribadian")
     st.write("Masukkan nilai fitur untuk memprediksi tipe kepribadian:")
 
     if st.session_state.model is None:
@@ -172,11 +184,23 @@ elif page == "Prediksi":
             prob = st.session_state.model.predict_proba(input_df)[0]
             predicted_label = target_encoder.inverse_transform([prediction])[0]
 
-            st.success(f"✅ Tipe Kepribadian yang Diprediksi: **{predicted_label}**")
+            st.success(f"\u2705 Tipe Kepribadian yang Diprediksi: **{predicted_label}**")
 
-            st.subheader("📋 Input Anda")
+            st.subheader("\U0001F4CB Input Anda")
             st.dataframe(input_df)
 
-            st.subheader("📊 Probabilitas Prediksi")
+            st.subheader("\U0001F4CA Probabilitas Prediksi")
             prob_df = pd.Series(prob, index=target_encoder.classes_)
             st.bar_chart(prob_df)
+
+# -------------------------------
+# Halaman Anggota Kelompok
+# -------------------------------
+elif page == "Anggota Kelompok":
+    st.title("\U0001F465 Anggota Kelompok")
+    st.markdown("""
+    **1. Diva Auliya Pusparini** (2304030041)  
+    **2. Paskalia Kanicha Mardian** (2304030062)  
+    **3. Sandi Krisna Mukti** (2304030074)  
+    **4. Siti Maisyaroh** (2304030079)
+    """)
